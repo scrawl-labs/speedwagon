@@ -8,6 +8,8 @@ import { indexListSchema, indexList } from "./tools/index-list.js";
 import { indexSuggestSchema, indexSuggest } from "./tools/index-suggest.js";
 import { slowQueriesSchema, slowQueries } from "./tools/slow-queries.js";
 import { indexSyncSchema, indexSync } from "./tools/index-sync.js";
+import { findSchema, find } from "./tools/find.js";
+import { aggregateSchema, aggregate } from "./tools/aggregate.js";
 
 const server = new McpServer({
   name: "mongodb-speedwagon",
@@ -60,6 +62,22 @@ server.registerTool("index_sync", {
   annotations: { readOnlyHint: false, destructiveHint: false },
 }, async (input) => ({
   content: [{ type: "text", text: await indexSync(input) }],
+}));
+
+server.registerTool("find", {
+  description: "Find documents in a collection. Returns up to 100 documents matching the filter. Use for looking up specific records by field values.",
+  inputSchema: findSchema,
+  annotations: { readOnlyHint: true },
+}, async (input) => ({
+  content: [{ type: "text", text: await find(input) }],
+}));
+
+server.registerTool("aggregate", {
+  description: "Run a MongoDB aggregation pipeline. Supports $match, $group, $sort, $project, $unwind, $lookup, etc. Write stages ($out, $merge) are blocked.",
+  inputSchema: aggregateSchema,
+  annotations: { readOnlyHint: true },
+}, async (input) => ({
+  content: [{ type: "text", text: await aggregate(input) }],
 }));
 
 async function main() {
