@@ -2,6 +2,8 @@
   "files": [],
   "references": [
     { "path": "./packages/speedwagon" },
-    { "path": "./packages/speedwagon-mongodb" }
+    { "path": "./packages/speedwagon-mongodb" },
+    { "path": "./packages/speedwagon-elastic" },
+    { "path": "./packages/speedwagon-grafana" }
   ]
 }

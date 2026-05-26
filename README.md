@@ -8,16 +8,20 @@
 
 > **Side project notice** — Maintained as a side project. Best-effort response time on issues and PRs. For production use, please pin specific versions.
 
-An MCP server family that sits between your AI agent and MongoDB. Ask questions about your queries in plain language. Get back explain plans, index suggestions, and slow query reports — without opening Compass or writing `db.collection.explain()` by hand.
+An MCP server family that sits between your AI agent and your data infrastructure. Ask questions in plain language. Get back MongoDB explain plans, index suggestions, slow query reports, Elastic APM traces and logs, and Grafana dashboard metrics — without opening four tabs.
 
-## Two packages, one promise
+MongoDB talks to the database directly. Elastic and Grafana are read-only gateways over their official MCP servers.
 
-| Package | Purpose | Where it runs |
-|---------|---------|---------------|
-| [`@scrawl-labs/speedwagon`](./packages/speedwagon) | **Audit** existing slow queries on production / shared DBs. | Any MongoDB. Read-only by construction — write methods aren't even imported. |
-| [`@scrawl-labs/speedwagon-lab`](./packages/speedwagon-lab) | **Preflight** new collections locally. Seed synthetic data with faker, sync prod indexes, analyze at scale. | Local mongod only. Refuses non-local hosts at startup. |
+## Packages
 
-The two are deliberately separated so the "audit" package is provably safe — you can grep the source and find no `insertOne`, `createIndex`, or `deleteMany` calls. Writes live in `speedwagon-lab` and only.
+| Package                                                            | Purpose                                                                                     | Status                  |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- | ----------------------- |
+| [`@scrawl-labs/speedwagon`](./packages/speedwagon)                 | Shared MCP infrastructure (`runMcpServer`, `defineTool`, env helpers). Not a server itself. | Stable                  |
+| [`@scrawl-labs/speedwagon-mongodb`](./packages/speedwagon-mongodb) | **Audit** MongoDB queries on production / shared DBs. Read-only by construction.            | Stable                  |
+| [`@scrawl-labs/speedwagon-elastic`](./packages/speedwagon-elastic) | Elastic APM + logs. Read-only gateway over the Kibana Agent Builder MCP.                     | Beta                    |
+| [`@scrawl-labs/speedwagon-grafana`](./packages/speedwagon-grafana) | Grafana dashboards + metrics. Read-only gateway over the official `mcp-grafana`.             | Beta                    |
+
+`speedwagon-mongodb` talks to MongoDB directly. `speedwagon-elastic` and `speedwagon-grafana` are **gateways**: they connect to the official Elastic / Grafana MCP servers as a client and re-expose a curated, read-only slice of their tools. Backend-specific guardrails live in each backend package, not the shared infra.
 
 ## Why this exists
 
@@ -32,11 +36,14 @@ Speedwagon connects, runs explain, reads the plan, checks your indexes, and tell
 This is a monorepo. Once published to npm, install whichever package you need:
 
 ```bash
-# For production query analysis (read-only):
-npm install -g @scrawl-labs/speedwagon
+# MongoDB audit MCP (read-only):
+npm install -g @scrawl-labs/speedwagon-mongodb
 
-# For local lab work (write-allowed, localhost-only):
-npm install -g @scrawl-labs/speedwagon-lab
+# Elastic logs/APM gateway (needs a Kibana Agent Builder API key):
+npm install -g @scrawl-labs/speedwagon-elastic
+
+# Grafana metrics gateway (needs the official mcp-grafana available, e.g. via uvx):
+npm install -g @scrawl-labs/speedwagon-grafana
 ```
 
 Or from source:
@@ -60,13 +67,11 @@ Wire it into your MCP client (e.g. `~/.claude/settings.json`):
 ```json
 {
   "mcpServers": {
-    "speedwagon": {
+    "speedwagon-mongodb": {
       "command": "node",
-      "args": ["/absolute/path/to/mongodb-speedwagon/packages/speedwagon/dist/index.js"]
-    },
-    "speedwagon-lab": {
-      "command": "node",
-      "args": ["/absolute/path/to/mongodb-speedwagon/packages/speedwagon-lab/dist/index.js"]
+      "args": [
+        "/absolute/path/to/mongodb-speedwagon/packages/speedwagon-mongodb/dist/index.js"
+      ]
     }
   }
 }
@@ -76,96 +81,92 @@ Restart your agent. That's it.
 
 ## Tools
 
-### Shared (both packages)
+### `@scrawl-labs/speedwagon-mongodb`
 
 #### 🔍 `explain`
+
 Runs `queryPlanner` mode. Shows whether your query hits an index or does a full collection scan. No data is touched.
 
 > "explain the find query on users where email is alice@example.com"
 
 #### ⚡ `explain_analyze`
+
 Runs `executionStats` mode — execution time, documents examined, keys examined. **The query runs for real**, so prefer a secondary read preference on production.
 
 > "how many documents does MongoDB actually scan for this query?"
 
 #### 📋 `index_list`
+
 Every index on a collection with key pattern, uniqueness, and size in bytes.
 
 > "what indexes exist on the orders collection?"
 
 #### 💡 `index_suggest`
+
 Runs explain, checks for COLLSCAN, compares against existing indexes, suggests what to create. Gives you the `createIndex` command ready to copy-paste.
 
 > "suggest an index for querying orders by userId sorted by createdAt"
 
 #### 🐢 `slow_queries`
+
 Pulls from `system.profile`. If the profiler isn't enabled, tells you how to turn it on.
 
 > "show me queries slower than 200ms on the payments collection"
 
 #### 🔎 `find`
+
 Query documents in plain language. Hard-capped at 100 documents per call.
 
 > "find the user with email alice@example.com"
 
 #### 🧮 `aggregate`
+
 Run aggregation pipelines. Write stages (`$out`, `$merge`) are blocked. Auto-appends `$limit` if you forget one.
 
 > "group orders by userId and sum the total amount"
 
-### Lab-only (`@scrawl-labs/speedwagon-lab`)
+### `@scrawl-labs/speedwagon-elastic`
 
-These write to your local mongod. The package refuses to connect to a non-local host at startup.
+A gateway over the Kibana Agent Builder MCP (`{KIBANA_URL}/api/agent_builder/mcp`). It connects with your `ApiKey` and re-exposes whatever tools Agent Builder offers — the built-in ES|QL / search tools reach APM (`traces-apm*`) and log (`logs-*`) data streams. Read-only is enforced by the API key's `feature_agentBuilder.read` privilege. See [the package README](./packages/speedwagon-elastic).
 
-#### 🌱 `seed`
-Generate synthetic documents with [faker](https://fakerjs.dev/). You describe the shape, the agent fills in the schema, faker produces realistic data. Batched inserts for speed (100k+ docs handled comfortably).
+> "search the logs index for errors from the checkout service in the last hour"
 
-> "seed 50,000 users with email, full name, age 18-80, and a random signup date in the past 2 years"
+### `@scrawl-labs/speedwagon-grafana`
 
-Schema format:
+A gateway over the official [`mcp-grafana`](https://github.com/grafana/mcp-grafana). Speedwagon spawns it with `--disable-write` and exposes a curated read-only slice: dashboard search/inspection, datasource listing, and Prometheus / Loki queries. Requires the `mcp-grafana` binary to be runnable (e.g. via `uvx`). See [the package README](./packages/speedwagon-grafana).
 
-```json
-{
-  "email":     { "type": "internet.email" },
-  "name":      { "type": "person.fullName" },
-  "age":       { "type": "number.int", "args": { "min": 18, "max": 80 } },
-  "status":    { "static": "active" },
-  "createdAt": { "type": "date.past", "args": { "years": 2 } }
-}
-```
-
-#### 🧹 `clear`
-`deleteMany({})` on a collection. Requires `confirm: true`. Localhost only.
-
-> "clear the users collection in my lab"
-
-#### 🔄 `index_sync`
-Copy index definitions from a source MongoDB (e.g. Atlas prod) to your local lab DB. Dry-run by default.
-
-> "sync indexes from our prod Atlas to my local MongoDB, dry run first"
+> "query the prometheus rate of http_requests_total for the api service over 5m"
 
 ## Environment variables
 
-| Variable           | Required | Description                              |
-| ------------------ | -------- | ---------------------------------------- |
-| `MONGODB_URI`      | Yes      | Connection string for the target MongoDB |
-| `MONGODB_DATABASE` | Yes      | Database name to analyze                 |
+| Variable                        | Required | Used by                           | Description                                      |
+| ------------------------------- | -------- | --------------------------------- | ------------------------------------------------ |
+| `MONGODB_URI`                   | Yes      | `@scrawl-labs/speedwagon-mongodb` | Connection string for the target MongoDB         |
+| `MONGODB_DATABASE`              | Yes      | `@scrawl-labs/speedwagon-mongodb` | Database name to analyze                         |
+| `KIBANA_URL`                    | Yes      | `@scrawl-labs/speedwagon-elastic` | Base URL of your Kibana instance                 |
+| `ELASTIC_API_KEY`               | Yes      | `@scrawl-labs/speedwagon-elastic` | API key with `feature_agentBuilder.read`         |
+| `KIBANA_SPACE`                  | No       | `@scrawl-labs/speedwagon-elastic` | Target a non-default Kibana space                |
+| `GRAFANA_URL`                   | Yes      | `@scrawl-labs/speedwagon-grafana` | Grafana instance URL                             |
+| `GRAFANA_SERVICE_ACCOUNT_TOKEN` | Yes      | `@scrawl-labs/speedwagon-grafana` | Service account token (Viewer role is enough)    |
+| `GRAFANA_MCP_COMMAND`           | No       | `@scrawl-labs/speedwagon-grafana` | Override the upstream launcher (default `uvx`)   |
+| `GRAFANA_MCP_ARGS`              | No       | `@scrawl-labs/speedwagon-grafana` | Override upstream args                           |
 
-For Atlas (audit): the URI already includes TLS. Append `?readPreference=secondaryPreferred` to keep load off primary.
+For Atlas: the URI already includes TLS. Append `?readPreference=secondaryPreferred` to keep load off primary.
 
-For local (lab): `mongodb://localhost:27017` works fine. The lab package refuses anything else.
+See [.env.example](./.env.example) for a copy-paste starting point covering all three backends.
 
 ## Guardrails
 
 Speedwagon is paranoid about your data. Layered defenses:
 
-| Layer | Where | What it does |
-|-------|-------|-------------|
-| **Package separation** | audit vs lab | The audit package's source never imports MongoDB write APIs. Provable by `grep`. |
-| **Read-only proxy** | core | Every collection in the audit package is wrapped in a Proxy that throws on `insertOne`, `deleteMany`, `drop`, and 13 other write methods at the driver level. |
-| **Aggregate stage filter** | core | `$out` and `$merge` are rejected before the pipeline runs. |
-| **Localhost guard** | lab | The lab package parses `MONGODB_URI` at startup and refuses any non-local host. |
-| **Hard limits** | core | `find` caps at 100 docs, `aggregate` caps at 200 results. |
+| Layer                      | Where                | What it does                                                                                                                             |
+| -------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Per-backend package**    | each backend pkg     | Each backend's source never imports its driver's write APIs. Provable by `grep`.                                                         |
+| **Read-only proxy**        | `speedwagon-mongodb` | Every collection is wrapped in a Proxy that throws on `insertOne`, `deleteMany`, `drop`, and 13 other write methods at the driver level. |
+| **Aggregate stage filter** | `speedwagon-mongodb` | `$out` and `$merge` are rejected before the pipeline runs.                                                                               |
+| **Hard limits**            | `speedwagon-mongodb` | `find` caps at 100 docs, `aggregate` caps at 200 results.                                                                                |
+| **Curated tool allowlist** | `speedwagon-grafana` | Only read tools are re-exposed; the upstream `mcp-grafana` is also spawned with `--disable-write`.                                       |
+| **Read-only API key**      | `speedwagon-elastic` | Access is scoped by the Kibana `feature_agentBuilder.read` privilege on the API key.                                                     |
 
 Pair this with a read-only Atlas user and `readPreference=secondaryPreferred` and the blast radius is essentially zero.
 
@@ -184,28 +185,15 @@ You:    "run explain_analyze on the current query"
 Agent:  [calls explain_analyze] → 542ms, 1.2M docs examined, 47 returned
 ```
 
-### Case B — Preflight a new collection before launch
-
-```
-You:    "sync indexes from prod to my local lab, dry run"
-Agent:  [lab: index_sync]    → would create 4 indexes
-You:    "apply it"
-Agent:  [lab: index_sync]    → 4 indexes created
-You:    "seed 200k orders with userId 1-10000, amount 1-100000, status active/pending/refunded"
-Agent:  [lab: seed]          → inserted 200000 docs in 18s
-You:    "explain_analyze the query our new endpoint will run"
-Agent:  [explain_analyze]    → 1.8s, 200k docs examined — needs another index
-```
-
-Four messages each. Problem identified, solution ready, no tab switching.
+Four messages. Problem identified, solution ready, no tab switching.
 
 ## Tech stack
 
 - TypeScript (project references, npm workspaces)
 - `@modelcontextprotocol/sdk` — MCP protocol
-- `mongodb` — Node driver
+- `mongodb` — Node driver (speedwagon-mongodb)
 - `zod` — input validation
-- `@faker-js/faker` — lab-only synthetic data
+- `dotenv` — env loading
 
 ## Contributing
 
