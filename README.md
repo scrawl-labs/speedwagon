@@ -26,16 +26,21 @@ npm run build
 
 Add to `~/.claude/settings.json` (or wherever your MCP config lives):
 
+Create a `.env` file in the project root:
+
+```
+MONGODB_URI=mongodb+srv://readonly:pass@cluster.mongodb.net/?retryWrites=true&w=majority
+MONGODB_DATABASE=your_db
+```
+
+Add to `~/.claude/settings.json` (or wherever your MCP config lives):
+
 ```json
 {
   "mcpServers": {
     "mongodb-speedwagon": {
       "command": "node",
-      "args": ["/absolute/path/to/mongodb-speedwagon/dist/index.js"],
-      "env": {
-        "MONGODB_URI": "mongodb+srv://user:pass@cluster.mongodb.net/?retryWrites=true&w=majority",
-        "MONGODB_DATABASE": "your_db"
-      }
+      "args": ["/absolute/path/to/mongodb-speedwagon/dist/index.js"]
     }
   }
 }
@@ -75,6 +80,22 @@ Pulls from `system.profile`. If the profiler isn't enabled, it tells you how to 
 
 > "show me queries slower than 200ms on the payments collection"
 
+### 🔎 `find`
+
+Query documents in plain language. No more `node -e "const { MongoClient } = require('mongodb')..."` one-liners. Just ask. Hard-capped at 100 documents per call so you never accidentally dump an entire collection.
+
+> "find the user with email tommy.lee@goorm.io"
+
+> "show me the 10 most recent orders with status pending"
+
+### 🧮 `aggregate`
+
+Run aggregation pipelines. Claude already knows MongoDB's pipeline syntax — you describe what you want, it builds the pipeline, speedwagon executes it. Write stages (`$out`, `$merge`) are blocked. Auto-appends `$limit` if you forget one.
+
+> "group orders by userId and sum the total amount"
+
+> "count signups per day for the last 30 days"
+
 ### 🔄 `index_sync`
 
 The one that solves a real operational pain. Copies index definitions from one MongoDB (e.g. your Atlas prod) to another (e.g. your local instance). **Dry run by default** — it shows what it would create without actually creating anything.
@@ -100,6 +121,19 @@ Same indexes, enough data, no risk to production.
 For Atlas: your connection string already includes TLS. No extra config needed.
 
 For local: `mongodb://localhost:27017` works fine.
+
+## Guardrails
+
+Speedwagon is paranoid about your data. Three layers of protection:
+
+| Layer | What it does |
+|-------|-------------|
+| **Read-only proxy** | Every collection is wrapped in a Proxy that blocks `insertOne`, `deleteMany`, `drop`, and 15 other write methods at the driver level |
+| **Aggregate stage filter** | `$out` and `$merge` are rejected before the pipeline runs |
+| **index_sync locality check** | `dry_run=false` only works when the target is `localhost` — no accidental index creation on remote DBs |
+| **Hard limits** | `find` caps at 100 docs, `aggregate` caps at 200 results |
+
+Use a read-only Atlas DB user on top of this and you've got belt, suspenders, and a parachute.
 
 ## The workflow that actually helps
 
