@@ -1,0 +1,74 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report.
+
+        > This is a side project. Please include enough detail to reproduce — vague reports may be closed without action.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+      placeholder: When I ran `explain` against ..., the output was ... but I expected ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Minimum steps to reproduce. Include the tool call, input, and observed output.
+      placeholder: |
+        1. Configure speedwagon with MONGODB_URI=...
+        2. Call `explain` with `{"collection": "users", "filter": "{\"email\":\"a@b.com\"}"}`
+        3. Output shows ...
+    validations:
+      required: true
+
+  - type: input
+    id: package
+    attributes:
+      label: Package
+      description: Which package?
+      placeholder: "@scrawl-labs/speedwagon@0.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: mongodb-version
+    attributes:
+      label: MongoDB version
+      placeholder: "7.0.5 (Atlas) / 6.0.12 (local)"
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js version
+      placeholder: "v20.11.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / error output
+      description: Paste any error messages or stack traces. Redact connection strings and credentials.
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submit checklist
+      options:
+        - label: I have searched existing issues and this is not a duplicate.
+          required: true
+        - label: I have removed any credentials, hostnames, or internal data from logs.
+          required: true
