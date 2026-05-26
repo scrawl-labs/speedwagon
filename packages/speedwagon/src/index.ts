@@ -1,18 +1,26 @@
-import "./config.js";
+#!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { closeDb } from "./mongo-client.js";
-import { explainSchema, explain } from "./tools/explain.js";
-import { explainAnalyzeSchema, explainAnalyze } from "./tools/explain-analyze.js";
-import { indexListSchema, indexList } from "./tools/index-list.js";
-import { indexSuggestSchema, indexSuggest } from "./tools/index-suggest.js";
-import { slowQueriesSchema, slowQueries } from "./tools/slow-queries.js";
-import { indexSyncSchema, indexSync } from "./tools/index-sync.js";
-import { findSchema, find } from "./tools/find.js";
-import { aggregateSchema, aggregate } from "./tools/aggregate.js";
+import {
+  closeDb,
+  explainSchema,
+  explain,
+  explainAnalyzeSchema,
+  explainAnalyze,
+  indexListSchema,
+  indexList,
+  indexSuggestSchema,
+  indexSuggest,
+  slowQueriesSchema,
+  slowQueries,
+  findSchema,
+  find,
+  aggregateSchema,
+  aggregate,
+} from "@scrawl-labs/speedwagon-core";
 
 const server = new McpServer({
-  name: "mongodb-speedwagon",
+  name: "speedwagon",
   version: "0.1.0",
 });
 
@@ -54,14 +62,6 @@ server.registerTool("slow_queries", {
   annotations: { readOnlyHint: true },
 }, async (input) => ({
   content: [{ type: "text", text: await slowQueries(input) }],
-}));
-
-server.registerTool("index_sync", {
-  description: "Sync index definitions from a source MongoDB (e.g. Atlas dev/prod) to the currently connected MongoDB (e.g. local). dry_run=true (default) previews only.",
-  inputSchema: indexSyncSchema,
-  annotations: { readOnlyHint: false, destructiveHint: false },
-}, async (input) => ({
-  content: [{ type: "text", text: await indexSync(input) }],
 }));
 
 server.registerTool("find", {

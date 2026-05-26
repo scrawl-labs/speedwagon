@@ -1,4 +1,4 @@
-import { MongoClient, Db, Collection } from "mongodb";
+import { MongoClient, type Db, type Collection } from "mongodb";
 import { config } from "./config.js";
 
 const BLOCKED_METHODS = new Set([
@@ -44,7 +44,11 @@ function createReadOnlyDb(db: Db): Db {
           return createReadOnlyCollection(col);
         };
       }
-      if (prop === "dropCollection" || prop === "dropDatabase" || prop === "createCollection") {
+      if (
+        prop === "dropCollection" ||
+        prop === "dropDatabase" ||
+        prop === "createCollection"
+      ) {
         return () => {
           throw new Error(
             `Destructive operation "${String(prop)}" is blocked. Speedwagon runs in read-only mode.`
@@ -66,14 +70,6 @@ export async function getDb(): Promise<Db> {
   await client.connect();
   db = createReadOnlyDb(client.db(config.database));
   return db;
-}
-
-export async function getRawDb(): Promise<Db> {
-  if (!client) {
-    client = new MongoClient(config.mongoUri);
-    await client.connect();
-  }
-  return client.db(config.database);
 }
 
 export async function closeDb(): Promise<void> {

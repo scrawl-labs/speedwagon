@@ -1,0 +1,25 @@
+{
+  "name": "@scrawl-labs/speedwagon",
+  "version": "0.1.0",
+  "description": "MongoDB query analyzer MCP server (audit). Read-only by construction — production-safe.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "speedwagon": "./dist/index.js"
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -b",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@scrawl-labs/speedwagon-core": "0.1.0"
+  },
+  "keywords": ["mcp", "mongodb", "explain", "query", "analyzer", "read-only"],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
+}

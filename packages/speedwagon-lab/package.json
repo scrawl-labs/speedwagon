@@ -1,0 +1,28 @@
+{
+  "name": "@scrawl-labs/speedwagon-lab",
+  "version": "0.1.0",
+  "description": "Local MongoDB lab for speedwagon. Seed synthetic data with faker, sync indexes from prod, and analyze queries at production scale — without touching prod.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "speedwagon-lab": "./dist/index.js"
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -b",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^9.0.0",
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@scrawl-labs/speedwagon-core": "0.1.0",
+    "mongodb": "^6.16.0",
+    "zod": "^3.25.23"
+  },
+  "keywords": ["mcp", "mongodb", "faker", "seed", "local", "lab"],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
+}

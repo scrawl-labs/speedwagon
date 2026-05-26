@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { MongoClient, type IndexSpecification } from "mongodb";
-import { getRawDb } from "../mongo-client.js";
-import { config } from "../config.js";
+import { getRawDb } from "../raw-client.js";
 
 export const indexSyncSchema = z.object({
   source_uri: z.string().describe("Source MongoDB URI to copy indexes from (e.g. Atlas dev/prod)"),
@@ -18,19 +17,9 @@ export async function indexSync(input: IndexSyncInput): Promise<string> {
   try {
     await sourceClient.connect();
     const sourceDb = sourceClient.db(input.source_database);
-    const targetUri = config.mongoUri;
-    const isLocalTarget =
-      targetUri.includes("localhost") ||
-      targetUri.includes("127.0.0.1") ||
-      targetUri.includes("host.docker.internal");
 
-    if (!isLocalTarget && !input.dry_run) {
-      throw new Error(
-        "index_sync with dry_run=false is only allowed when the target is localhost. " +
-        "This prevents accidental index creation on remote databases."
-      );
-    }
-
+    // The target DB connection itself enforces localhost via assertLocalUri
+    // in raw-client.ts. This is defense in depth.
     const targetDb = await getRawDb();
 
     const collections = input.collection
