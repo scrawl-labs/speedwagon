@@ -1,36 +1,39 @@
 # @scrawl-labs/speedwagon
 
-MongoDB query analyzer MCP server — the **audit** package. Read-only by construction.
+Shared MCP server infrastructure for the Speedwagon family. Used by the per-backend packages — `@scrawl-labs/speedwagon-mongodb`, `@scrawl-labs/speedwagon-elastic`, `@scrawl-labs/speedwagon-grafana` — to register their tools.
 
-This package never imports MongoDB write APIs. The source can be grep'd and you will find no `insertOne`, `createIndex`, or `deleteMany` calls. Writes live in [`@scrawl-labs/speedwagon-lab`](https://www.npmjs.com/package/@scrawl-labs/speedwagon-lab) and only there.
+**Not an MCP server itself.** Install one of the backend packages to actually expose tools to your agent.
 
-## Install
+## What it provides
 
-```bash
-npm install -g @scrawl-labs/speedwagon
+- `runMcpServer({ name, version, tools, onShutdown? })` — boilerplate for `McpServer` + stdio transport + SIGINT handling.
+- `defineTool({ name, description, inputSchema, annotations?, handler })` — type-safe tool descriptors. `inputSchema` is a Zod schema; `handler` receives the parsed input and returns a string.
+- `requiredEnv(key)` / `optionalEnv(key, fallback?)` — env helpers (auto-loads `.env` via `dotenv`).
+
+## Example
+
+```ts
+#!/usr/bin/env node
+import { runMcpServer, defineTool, requiredEnv } from "@scrawl-labs/speedwagon";
+import { z } from "zod";
+
+const ping = defineTool({
+  name: "ping",
+  description: "Reply with pong.",
+  inputSchema: z.object({}),
+  annotations: { readOnlyHint: true },
+  handler: async () => "pong",
+});
+
+runMcpServer({
+  name: "my-backend",
+  version: "0.1.0",
+  tools: [ping],
+}).catch((error) => {
+  console.error("Failed to start MCP server:", error);
+  process.exit(1);
+});
 ```
-
-Add to your MCP client config (e.g. `~/.claude/settings.json`):
-
-```json
-{
-  "mcpServers": {
-    "speedwagon": {
-      "command": "speedwagon",
-      "env": {
-        "MONGODB_URI": "mongodb+srv://readonly_user:password@cluster.mongodb.net/?readPreference=secondaryPreferred",
-        "MONGODB_DATABASE": "your_db"
-      }
-    }
-  }
-}
-```
-
-## Tools
-
-`explain`, `explain_analyze`, `index_list`, `index_suggest`, `slow_queries`, `find`, `aggregate`.
-
-See [the project README](https://github.com/scrawl-labs/mongodb-speedwagon#tools) for details.
 
 ## License
 

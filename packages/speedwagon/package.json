@@ -1,23 +1,27 @@
 {
   "name": "@scrawl-labs/speedwagon",
   "version": "0.1.0",
-  "description": "MongoDB query analyzer MCP server (audit). Read-only by construction — production-safe.",
+  "description": "Shared MCP server infrastructure for the Speedwagon family (MongoDB, Elastic, Grafana). Provides runMcpServer, defineTool, and env helpers.",
   "type": "module",
   "main": "./dist/index.js",
-  "bin": {
-    "speedwagon": "./dist/index.js"
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "files": ["dist", "README.md"],
   "scripts": {
     "build": "tsc -b",
-    "start": "node dist/index.js",
     "clean": "rm -rf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "@scrawl-labs/speedwagon-core": "0.1.0"
+    "dotenv": "^17.4.2",
+    "zod": "^3.25.23"
   },
-  "keywords": ["mcp", "mongodb", "explain", "query", "analyzer", "read-only"],
+  "keywords": ["mcp", "speedwagon", "shared", "infrastructure"],
   "license": "MIT",
   "publishConfig": {
     "access": "public"

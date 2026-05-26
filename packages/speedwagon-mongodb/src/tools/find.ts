@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getDb } from "../mongo-client.js";
+import { getDb } from "../client.js";
 
 export const findSchema = z.object({
   collection: z.string().describe("Collection name"),

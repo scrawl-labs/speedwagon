@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getDb } from "../mongo-client.js";
+import { getDb } from "../client.js";
 
 export const slowQueriesSchema = z.object({
   threshold_ms: z.number().optional().default(100).describe("Slow query threshold in milliseconds (default: 100ms)"),

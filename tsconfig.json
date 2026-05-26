@@ -1,8 +1,7 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/speedwagon-core" },
     { "path": "./packages/speedwagon" },
-    { "path": "./packages/speedwagon-lab" }
+    { "path": "./packages/speedwagon-mongodb" }
   ]
 }
