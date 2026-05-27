@@ -30,7 +30,7 @@ Add to your MCP client config (e.g. `~/.claude/settings.json`):
 
 `explain`, `explain_analyze`, `index_list`, `index_suggest`, `slow_queries`, `find`, `aggregate`.
 
-See [the project README](https://github.com/scrawl-labs/mongodb-speedwagon#tools) for details.
+See [the project README](https://github.com/scrawl-labs/speedwagon#tools) for details.
 
 ## License
 

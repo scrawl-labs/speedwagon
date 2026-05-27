@@ -1,8 +1,8 @@
 {
-  "name": "mongodb-speedwagon",
+  "name": "speedwagon",
   "private": true,
   "version": "0.1.0",
-  "description": "MongoDB query analyzer MCP server - explains your queries so you don't have to",
+  "description": "An MCP server family that explains your data infrastructure — MongoDB query plans, Elastic logs/APM, and Grafana metrics — from one conversation",
   "type": "module",
   "workspaces": [
     "packages/*"

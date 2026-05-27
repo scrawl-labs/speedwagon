@@ -1,10 +1,10 @@
-# mongodb-speedwagon
+# Speedwagon
 
 <p align="center">
   <img src=".github/assets/speedwagon.png" width="800"/>
 </p>
 
-<p align="center"><em>"You look like you're wonderin' 'why the heck is this query slow?!' Allow me to explain! The name's Speedwagon!"</em></p>
+<p align="center"><strong>An MCP server family for your data infrastructure — MongoDB, Elastic, Grafana.</strong></p>
 
 > **Side project notice** — Maintained as a side project. Best-effort response time on issues and PRs. For production use, please pin specific versions.
 
@@ -27,9 +27,9 @@ MongoDB talks to the database directly. Elastic and Grafana are read-only gatewa
 
 You're staring at a slow endpoint. You know it's a MongoDB query. You open Compass, copy the query, run explain, squint at the output, Google what `COLLSCAN` means again, check which indexes exist, realize the index doesn't cover your sort field, alt-tab back to your editor.
 
-Or you just ask your agent: "why is the users query slow?"
+Or you just ask your agent: "why is the users query slow?" — and Speedwagon connects, runs explain, reads the plan, checks your indexes, and tells you what's wrong.
 
-Speedwagon connects, runs explain, reads the plan, checks your indexes, and tells you what's wrong. One conversation. No context switching.
+The same context-switching tax shows up everywhere your data lives. Chasing one incident usually means Kibana in one tab for logs and APM traces, Grafana in another for dashboards and metrics, and your editor in a third. Speedwagon puts all three behind the same agent: ask about a slow query, an error spike, or a latency regression in one conversation. No tab-juggling, no copy-paste.
 
 ## Install
 
@@ -49,8 +49,8 @@ npm install -g @scrawl-labs/speedwagon-grafana
 Or from source:
 
 ```bash
-git clone https://github.com/scrawl-labs/mongodb-speedwagon.git
-cd mongodb-speedwagon
+git clone https://github.com/scrawl-labs/speedwagon.git
+cd speedwagon
 npm install
 npm run build
 ```
@@ -70,7 +70,7 @@ Wire it into your MCP client (e.g. `~/.claude/settings.json`):
     "speedwagon-mongodb": {
       "command": "node",
       "args": [
-        "/absolute/path/to/mongodb-speedwagon/packages/speedwagon-mongodb/dist/index.js"
+        "/absolute/path/to/speedwagon/packages/speedwagon-mongodb/dist/index.js"
       ]
     }
   }
@@ -170,9 +170,9 @@ Speedwagon is paranoid about your data. Layered defenses:
 
 Pair this with a read-only Atlas user and `readPreference=secondaryPreferred` and the blast radius is essentially zero.
 
-## The workflow that actually helps
+## The workflows that actually help
 
-### Case A — Slow query in production
+### Case A — Slow query in production (MongoDB)
 
 ```
 You:    "list indexes on the transactions collection"
@@ -187,11 +187,33 @@ Agent:  [calls explain_analyze] → 542ms, 1.2M docs examined, 47 returned
 
 Four messages. Problem identified, solution ready, no tab switching.
 
+### Case B — Tracing an error spike (Elastic)
+
+```
+You:    "search logs-* for ERROR from the checkout service in the last 30 minutes"
+Agent:  [Agent Builder search] → 412 errors, mostly "payment gateway timeout"
+You:    "pull the slowest checkout APM traces in that window"
+Agent:  [traces-apm* search]   → p99 3.1s, stalled on the payments-api call
+```
+
+From "something's on fire" to a named downstream dependency — without leaving the chat.
+
+### Case C — Confirming a deploy regressed latency (Grafana)
+
+```
+You:    "query the prometheus rate of http_requests_total for the api service over 5m"
+Agent:  [query_prometheus]            → traffic flat, so it isn't load
+You:    "find the api dashboard and show me its latency panel queries"
+Agent:  [search_dashboards + get_dashboard_panel_queries] → p95 panel query returned
+```
+
+Metrics and dashboards answer "did my deploy do this?" in the same place you asked the question.
+
 ## Tech stack
 
 - TypeScript (project references, npm workspaces)
-- `@modelcontextprotocol/sdk` — MCP protocol
-- `mongodb` — Node driver (speedwagon-mongodb)
+- `@modelcontextprotocol/sdk` — MCP protocol, used as both **server** and **client**. `speedwagon-elastic` / `speedwagon-grafana` ship no data-source driver of their own: they run an MCP client that connects to the official upstream server (Kibana Agent Builder over HTTP, `mcp-grafana` over stdio) and re-expose a read-only slice of its tools.
+- `mongodb` — Node driver (`speedwagon-mongodb` only — the one backend that talks to a database directly)
 - `zod` — input validation
 - `dotenv` — env loading
 
