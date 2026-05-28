@@ -8,7 +8,7 @@ Shared MCP server infrastructure for the Speedwagon family. Used by the per-back
 
 - `runMcpServer({ name, version, tools, onShutdown? })` — boilerplate for `McpServer` + stdio transport + SIGINT handling.
 - `defineTool({ name, description, inputSchema, annotations?, handler })` — type-safe tool descriptors. `inputSchema` is a Zod schema; `handler` receives the parsed input and returns a string.
-- `requiredEnv(key)` / `optionalEnv(key, fallback?)` — env helpers (auto-loads `.env` via `dotenv`).
+- `requiredEnv(key)` / `optionalEnv(key, fallback?)` — env helpers that read `process.env` only. The library performs no I/O at import time. For MCP servers, populate env via the host's MCP client config `env` block (e.g. `claude mcp add --env`); for local debugging, use inline env, the MCP Inspector, or `node --env-file=.env`.
 
 ## Example
 
