@@ -217,7 +217,6 @@ Metrics and dashboards answer "did my deploy do this?" in the same place you ask
 - `@modelcontextprotocol/sdk` — MCP protocol, used as both **server** and **client**. `speedwagon-elastic` / `speedwagon-grafana` ship no data-source driver of their own: they run an MCP client that connects to the official upstream server (Kibana Agent Builder over HTTP, `mcp-grafana` over stdio) and re-expose a read-only slice of its tools.
 - `mongodb` — Node driver (`speedwagon-mongodb` only — the one backend that talks to a database directly)
 - `zod` — input validation
-- `dotenv` — env loading
 
 ## Contributing
 
