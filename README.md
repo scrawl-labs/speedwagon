@@ -51,9 +51,11 @@ Or from source:
 ```bash
 git clone https://github.com/scrawl-labs/speedwagon.git
 cd speedwagon
-npm install
-npm run build
+pnpm install
+pnpm build   # Turborepo-orchestrated build across all packages
 ```
+
+> This is a pnpm + Turborepo monorepo. Use `pnpm install` (not `npm install`) so the `workspace:*` links resolve.
 
 Create a `.env` file (see [.env.example](./.env.example) for the recommended form):
 
@@ -211,7 +213,7 @@ Metrics and dashboards answer "did my deploy do this?" in the same place you ask
 
 ## Tech stack
 
-- TypeScript (project references, npm workspaces)
+- TypeScript (project references) on a pnpm + Turborepo monorepo
 - `@modelcontextprotocol/sdk` — MCP protocol, used as both **server** and **client**. `speedwagon-elastic` / `speedwagon-grafana` ship no data-source driver of their own: they run an MCP client that connects to the official upstream server (Kibana Agent Builder over HTTP, `mcp-grafana` over stdio) and re-expose a read-only slice of its tools.
 - `mongodb` — Node driver (`speedwagon-mongodb` only — the one backend that talks to a database directly)
 - `zod` — input validation

@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "@scrawl-labs/speedwagon": "0.1.0",
+    "@scrawl-labs/speedwagon": "workspace:*",
     "mongodb": "^6.16.0",
     "zod": "^3.25.23"
   },

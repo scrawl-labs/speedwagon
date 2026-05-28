@@ -14,7 +14,7 @@
     "clean": "rm -rf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@scrawl-labs/speedwagon": "0.1.0"
+    "@scrawl-labs/speedwagon": "workspace:*"
   },
   "keywords": ["mcp", "grafana", "metrics", "dashboards", "prometheus", "speedwagon"],
   "license": "MIT",

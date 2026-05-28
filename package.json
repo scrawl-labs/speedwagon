@@ -4,17 +4,16 @@
   "version": "0.1.0",
   "description": "An MCP server family that explains your data infrastructure — MongoDB query plans, Elastic logs/APM, and Grafana metrics — from one conversation",
   "type": "module",
-  "workspaces": [
-    "packages/*"
-  ],
+  "packageManager": "pnpm@10.15.0",
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
-    "clean": "rm -rf packages/*/dist packages/*/tsconfig.tsbuildinfo",
-    "dev": "tsc --build --watch",
-    "typecheck": "tsc --build"
+    "build": "turbo run build",
+    "dev": "turbo watch build",
+    "clean": "turbo run clean",
+    "typecheck": "tsc -b"
   },
   "devDependencies": {
     "@types/node": "^22.19.19",
+    "turbo": "^2.3.3",
     "typescript": "^5.8.3"
   }
 }
