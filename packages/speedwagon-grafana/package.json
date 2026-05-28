@@ -16,6 +16,9 @@
   "dependencies": {
     "@scrawl-labs/speedwagon": "workspace:*"
   },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  },
   "keywords": ["mcp", "grafana", "metrics", "dashboards", "prometheus", "speedwagon"],
   "license": "MIT",
   "publishConfig": {

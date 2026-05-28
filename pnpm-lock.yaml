@@ -38,6 +38,10 @@ importers:
       '@scrawl-labs/speedwagon':
         specifier: workspace:*
         version: link:../speedwagon
+    devDependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.12.1
+        version: 1.29.0(zod@3.25.76)
 
   packages/speedwagon-mongodb:
     dependencies:
