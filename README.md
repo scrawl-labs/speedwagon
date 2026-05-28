@@ -57,14 +57,26 @@ pnpm build   # Turborepo-orchestrated build across all packages
 
 > This is a pnpm + Turborepo monorepo. Use `pnpm install` (not `npm install`) so the `workspace:*` links resolve.
 
-Create a `.env` file (see [.env.example](./.env.example) for the recommended form):
+Decide on your env values. Speedwagon expects them to be **injected by the host** (your MCP client's `env` block, or the parent shell) — it does not load `.env` files itself. [.env.example](./.env.example) is a reference template for the variables you'll inject:
 
 ```
 MONGODB_URI=mongodb+srv://readonly_user:password@cluster.mongodb.net/?readPreference=secondaryPreferred
 MONGODB_DATABASE=your_db
 ```
 
-Wire it into your MCP client (e.g. `~/.claude/settings.json`):
+Wire it into your MCP client. For Claude Code, the easiest path is the CLI:
+
+```bash
+claude mcp add speedwagon-mongodb \
+  --scope local \
+  --env MONGODB_URI="mongodb+srv://readonly_user:password@cluster.mongodb.net/?readPreference=secondaryPreferred" \
+  --env MONGODB_DATABASE="your_db" \
+  -- node /absolute/path/to/speedwagon/packages/speedwagon-mongodb/dist/index.js
+```
+
+This writes the registration to `~/.claude.json` (project-scoped under `projects[<cwd>].mcpServers`). Verify with `claude mcp list`.
+
+If you prefer to edit JSON directly, the file is **`~/.claude.json`** (not `~/.claude/settings.json` — that's for harness settings like hooks/permissions and is not read for MCP servers). To share the registration with your team via git, use a project-local **`.mcp.json`** at the repo root instead. Either way, the `env` block is required — Speedwagon does not load `.env` files:
 
 ```json
 {
@@ -73,7 +85,11 @@ Wire it into your MCP client (e.g. `~/.claude/settings.json`):
       "command": "node",
       "args": [
         "/absolute/path/to/speedwagon/packages/speedwagon-mongodb/dist/index.js"
-      ]
+      ],
+      "env": {
+        "MONGODB_URI": "mongodb+srv://readonly_user:password@cluster.mongodb.net/?readPreference=secondaryPreferred",
+        "MONGODB_DATABASE": "your_db"
+      }
     }
   }
 }
