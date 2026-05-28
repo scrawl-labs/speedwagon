@@ -12,7 +12,19 @@ The official `mcp-grafana` binary must be runnable. Easiest is [`uv`](https://do
 npm install -g @scrawl-labs/speedwagon-grafana
 ```
 
-Add to your MCP client config (e.g. `~/.claude/settings.json`):
+Wire it into your MCP client. For Claude Code, the easiest path is the CLI:
+
+```bash
+claude mcp add speedwagon-grafana \
+  --scope local \
+  --env GRAFANA_URL="https://your-stack.grafana.net" \
+  --env GRAFANA_SERVICE_ACCOUNT_TOKEN="glsa_xxx" \
+  -- speedwagon-grafana
+```
+
+This writes the registration to `~/.claude.json` (project-scoped under `projects[<cwd>].mcpServers`). Verify with `claude mcp list`.
+
+If you prefer to edit JSON directly, the file is **`~/.claude.json`** (not `~/.claude/settings.json` — that's for harness settings like hooks/permissions and is not read for MCP servers). To share the registration with your team via git, use a project-local **`.mcp.json`** at the repo root instead. Either way, the `env` block is required — Speedwagon does not load `.env` files:
 
 ```json
 {
