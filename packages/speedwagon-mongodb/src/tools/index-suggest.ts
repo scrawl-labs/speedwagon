@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { getDb } from "../client.js";
+import { getDefaultEnv } from "../config.js";
 
 export const indexSuggestSchema = z.object({
+  env: z.string().optional().describe(`Target environment. Defaults to "${getDefaultEnv()}".`),
   collection: z.string().describe("Collection name"),
   filter: z.string().describe("Query filter as JSON"),
   sort: z.string().optional().describe("Sort condition as JSON"),
@@ -10,7 +12,7 @@ export const indexSuggestSchema = z.object({
 export type IndexSuggestInput = z.infer<typeof indexSuggestSchema>;
 
 export async function indexSuggest(input: IndexSuggestInput): Promise<string> {
-  const db = await getDb();
+  const { db } = await getDb(input.env);
   const collection = db.collection(input.collection);
 
   const filter = JSON.parse(input.filter);
@@ -59,6 +61,7 @@ export async function indexSuggest(input: IndexSuggestInput): Promise<string> {
 
   return JSON.stringify(
     {
+      environment: input.env || getDefaultEnv(),
       isCollScan,
       alreadyCovered,
       suggestions,

@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { getDb } from "../client.js";
+import { getDefaultEnv } from "../config.js";
 
 export const slowQueriesSchema = z.object({
+  env: z.string().optional().describe(`Target environment. Defaults to "${getDefaultEnv()}".`),
   threshold_ms: z.number().optional().default(100).describe("Slow query threshold in milliseconds (default: 100ms)"),
   limit: z.number().optional().default(20).describe("Maximum number of queries to return (default: 20)"),
   collection_filter: z.string().optional().describe("Filter by specific collection name"),
@@ -10,7 +12,7 @@ export const slowQueriesSchema = z.object({
 export type SlowQueriesInput = z.infer<typeof slowQueriesSchema>;
 
 export async function slowQueries(input: SlowQueriesInput): Promise<string> {
-  const db = await getDb();
+  const { db } = await getDb(input.env);
 
   const filter: Record<string, unknown> = {
     millis: { $gte: input.threshold_ms },
@@ -31,6 +33,7 @@ export async function slowQueries(input: SlowQueriesInput): Promise<string> {
     if (results.length === 0) {
       const profilingLevel = await db.command({ profile: -1 });
       return JSON.stringify({
+        environment: input.env || getDefaultEnv(),
         message: "No slow queries found.",
         hint:
           profilingLevel.was === 0
@@ -52,7 +55,11 @@ export async function slowQueries(input: SlowQueriesInput): Promise<string> {
       ts: r.ts,
     }));
 
-    return JSON.stringify(formatted, null, 2);
+    return JSON.stringify({
+      environment: input.env || getDefaultEnv(),
+      count: formatted.length,
+      queries: formatted,
+    }, null, 2);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     if (msg.includes("not found") || msg.includes("system.profile")) {

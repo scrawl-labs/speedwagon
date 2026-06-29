@@ -1,9 +1,11 @@
 import { z } from "zod";
 import { getDb } from "../client.js";
+import { getDefaultEnv } from "../config.js";
 
 const BLOCKED_STAGES = new Set(["$out", "$merge"]);
 
 export const aggregateSchema = z.object({
+  env: z.string().optional().describe(`Target environment. Defaults to "${getDefaultEnv()}".`),
   collection: z.string().describe("Collection name"),
   pipeline: z.string().describe("Aggregation pipeline as JSON array (e.g. [{\"$match\": {\"status\": \"active\"}}, {\"$group\": {\"_id\": \"$userId\", \"total\": {\"$sum\": \"$amount\"}}}])"),
   limit: z.number().optional().default(50).describe("Maximum number of results (default: 50, max: 200). Appended as $limit if not already in pipeline"),
@@ -12,7 +14,7 @@ export const aggregateSchema = z.object({
 export type AggregateInput = z.infer<typeof aggregateSchema>;
 
 export async function aggregate(input: AggregateInput): Promise<string> {
-  const db = await getDb();
+  const { db } = await getDb(input.env);
   const collection = db.collection(input.collection);
 
   const pipeline = JSON.parse(input.pipeline) as Record<string, unknown>[];
@@ -34,6 +36,7 @@ export async function aggregate(input: AggregateInput): Promise<string> {
   const results = await collection.aggregate(pipeline).toArray();
 
   return JSON.stringify({
+    environment: input.env || getDefaultEnv(),
     count: results.length,
     results,
   }, null, 2);

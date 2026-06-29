@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { getDb } from "../client.js";
+import { getDefaultEnv } from "../config.js";
 
 export const explainSchema = z.object({
+  env: z.string().optional().describe(`Target environment. Defaults to "${getDefaultEnv()}".`),
   collection: z.string().describe("Collection name"),
   filter: z.string().describe("Query filter as JSON (e.g. {\"email\": \"test@example.com\"})"),
   sort: z.string().optional().describe("Sort condition as JSON (e.g. {\"createdAt\": -1})"),
@@ -11,7 +13,7 @@ export const explainSchema = z.object({
 export type ExplainInput = z.infer<typeof explainSchema>;
 
 export async function explain(input: ExplainInput): Promise<string> {
-  const db = await getDb();
+  const { db } = await getDb(input.env);
   const collection = db.collection(input.collection);
 
   const filter = JSON.parse(input.filter);
