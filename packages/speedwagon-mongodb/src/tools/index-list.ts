@@ -1,14 +1,16 @@
 import { z } from "zod";
 import { getDb } from "../client.js";
+import { getDefaultEnv } from "../config.js";
 
 export const indexListSchema = z.object({
+  env: z.string().optional().describe(`Target environment. Defaults to "${getDefaultEnv()}".`),
   collection: z.string().describe("Collection name"),
 });
 
 export type IndexListInput = z.infer<typeof indexListSchema>;
 
 export async function indexList(input: IndexListInput): Promise<string> {
-  const { db } = await getDb();
+  const { db } = await getDb(input.env);
   const collection = db.collection(input.collection);
 
   const indexes = await collection.indexes();

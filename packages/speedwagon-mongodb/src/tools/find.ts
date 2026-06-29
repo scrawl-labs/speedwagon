@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { getDb } from "../client.js";
+import { getDefaultEnv } from "../config.js";
 
 export const findSchema = z.object({
+  env: z.string().optional().describe(`Target environment (available: configured via MONGODB_{ENV}_URI). Defaults to "${getDefaultEnv()}".`),
   collection: z.string().describe("Collection name"),
   filter: z.string().describe("Query filter as JSON (e.g. {\"email\": \"test@example.com\"})"),
   sort: z.string().optional().describe("Sort condition as JSON (e.g. {\"createdAt\": -1})"),
@@ -12,7 +14,7 @@ export const findSchema = z.object({
 export type FindInput = z.infer<typeof findSchema>;
 
 export async function find(input: FindInput): Promise<string> {
-  const { db } = await getDb();
+  const { db } = await getDb(input.env);
   const collection = db.collection(input.collection);
 
   const filter = JSON.parse(input.filter);
@@ -28,6 +30,7 @@ export async function find(input: FindInput): Promise<string> {
   const docs = await cursor.toArray();
 
   return JSON.stringify({
+    environment: input.env || getDefaultEnv(),
     count: docs.length,
     documents: docs,
   }, null, 2);

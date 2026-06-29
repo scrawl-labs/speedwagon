@@ -87,7 +87,8 @@ describe("client - getDb", () => {
     const { db } = await getDb("op");
 
     const col = db.collection("users");
-    expect(() => (col as Record<string, unknown>)["insertOne"]?.()).toThrow(
+    const insertOne = (col as unknown as Record<string, unknown>)["insertOne"] as (() => void) | undefined;
+    expect(() => insertOne?.()).toThrow(
       /read-only mode/
     );
   });
@@ -96,7 +97,8 @@ describe("client - getDb", () => {
     const { getDb } = await import("./client.js");
     const { db } = await getDb("op");
 
-    expect(() => (db as Record<string, unknown>)["dropCollection"]?.()).toThrow(
+    const dropCollection = (db as unknown as Record<string, unknown>)["dropCollection"] as (() => void) | undefined;
+    expect(() => dropCollection?.()).toThrow(
       /read-only mode/
     );
   });
@@ -114,7 +116,7 @@ describe("client - getDb", () => {
     const { db } = await getDb("dev");
 
     // insertOne should be callable (it's a mock fn, not blocked)
-    const col = db.collection("users") as Record<string, unknown>;
+    const col = db.collection("users") as unknown as Record<string, unknown>;
     expect(typeof col["insertOne"]).toBe("function");
     // Should not throw (the proxy is not applied)
     expect(() => (col["insertOne"] as () => void)()).not.toThrow();
@@ -146,7 +148,7 @@ describe("client - closeAll", () => {
     await closeAll();
 
     // The mock client's close() should have been called
-    const mockClientInstance = (MongoClient as ReturnType<typeof vi.fn>).mock.results[0]?.value;
+    const mockClientInstance = (MongoClient as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value;
     expect(mockClientInstance?.close).toHaveBeenCalled();
     expect(shutdownTunnels).toHaveBeenCalled();
   });

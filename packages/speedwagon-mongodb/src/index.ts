@@ -11,7 +11,7 @@ import { aggregateSchema, aggregate } from "./tools/aggregate.js";
 
 runMcpServer({
   name: "speedwagon-mongodb",
-  version: "0.1.0",
+  version: "0.2.0",
   onShutdown: closeAll,
   tools: [
     defineTool({
