@@ -24,7 +24,7 @@ export interface ParsedConfig {
   sshConfig: SshGlobalConfig | null;
 }
 
-const READONLY_ENVS = new Set(["op"]);
+const READONLY_ENVS = new Set(["op", "prod"]);
 
 const URI_PATTERN = /^MONGODB_([A-Z0-9]+)_URI$/;
 
