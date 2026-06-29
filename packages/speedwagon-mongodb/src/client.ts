@@ -1,5 +1,5 @@
 import { MongoClient, type Db, type Collection } from "mongodb";
-import { config } from "./config.js";
+import { getEnvConfig, getDefaultEnv } from "./config.js";
 
 const BLOCKED_METHODS = new Set([
   "insertOne",
@@ -66,9 +66,10 @@ let db: Db | null = null;
 export async function getDb(): Promise<Db> {
   if (db) return db;
 
-  client = new MongoClient(config.mongoUri);
+  const envCfg = getEnvConfig(getDefaultEnv());
+  client = new MongoClient(envCfg.uri);
   await client.connect();
-  db = createReadOnlyDb(client.db(config.database));
+  db = createReadOnlyDb(client.db(envCfg.database));
   return db;
 }
 

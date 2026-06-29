@@ -7,21 +7,38 @@
   "bin": {
     "speedwagon-mongodb": "./dist/index.js"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -b",
     "start": "node dist/index.js",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "test": "vitest run"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
     "@scrawl-labs/speedwagon": "workspace:*",
     "mongodb": "^6.16.0",
+    "ssh2": "^1.17.0",
     "zod": "^3.25.23"
   },
-  "keywords": ["mcp", "mongodb", "explain", "query", "analyzer", "read-only", "speedwagon"],
+  "keywords": [
+    "mcp",
+    "mongodb",
+    "explain",
+    "query",
+    "analyzer",
+    "read-only",
+    "speedwagon"
+  ],
   "license": "MIT",
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "@types/ssh2": "^1.15.5",
+    "vitest": "^2.1.9"
   }
 }
