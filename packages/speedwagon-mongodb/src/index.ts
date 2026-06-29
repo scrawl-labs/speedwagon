@@ -8,6 +8,9 @@ import { indexSuggestSchema, indexSuggest } from "./tools/index-suggest.js";
 import { slowQueriesSchema, slowQueries } from "./tools/slow-queries.js";
 import { findSchema, find } from "./tools/find.js";
 import { aggregateSchema, aggregate } from "./tools/aggregate.js";
+import { insertSchema, insert } from "./tools/insert.js";
+import { updateSchema, update } from "./tools/update.js";
+import { deleteSchema, del } from "./tools/delete.js";
 
 runMcpServer({
   name: "speedwagon-mongodb",
@@ -68,6 +71,30 @@ runMcpServer({
       inputSchema: aggregateSchema,
       annotations: { readOnlyHint: true },
       handler: aggregate,
+    }),
+    defineTool({
+      name: "insert",
+      description:
+        "Insert documents into a collection. Blocked on read-only environments (op). Provide documents as a JSON array.",
+      inputSchema: insertSchema,
+      annotations: { readOnlyHint: false },
+      handler: insert,
+    }),
+    defineTool({
+      name: "update",
+      description:
+        "Update documents in a collection. Blocked on read-only environments (op). Set many=true for updateMany.",
+      inputSchema: updateSchema,
+      annotations: { readOnlyHint: false },
+      handler: update,
+    }),
+    defineTool({
+      name: "delete",
+      description:
+        "Delete documents from a collection. Blocked on read-only environments (op). Empty filter {} is rejected for safety. Set many=true for deleteMany.",
+      inputSchema: deleteSchema,
+      annotations: { readOnlyHint: false },
+      handler: del,
     }),
   ],
 }).catch((error) => {
