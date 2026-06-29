@@ -24,9 +24,15 @@ export interface ParsedConfig {
   sshConfig: SshGlobalConfig | null;
 }
 
-const READONLY_ENVS = new Set(["op", "prod"]);
+const READWRITE_PREFIXES = ["dev", "beta", "staging", "local", "test"];
 
-const URI_PATTERN = /^MONGODB_([A-Z0-9]+)_URI$/;
+function isReadwrite(envName: string): boolean {
+  return READWRITE_PREFIXES.some(
+    (prefix) => envName === prefix || envName.startsWith(`${prefix}_`)
+  );
+}
+
+const URI_PATTERN = /^MONGODB_([A-Z0-9][A-Z0-9_]*)_URI$/;
 
 export function parseConfig(env: NodeJS.ProcessEnv): ParsedConfig {
   const environments = new Map<string, EnvConfig>();
@@ -58,7 +64,7 @@ export function parseConfig(env: NodeJS.ProcessEnv): ParsedConfig {
       name: envName,
       uri: value,
       database,
-      mode: READONLY_ENVS.has(envName) ? "readonly" : "readwrite",
+      mode: isReadwrite(envName) ? "readwrite" : "readonly",
       ssh: remoteHost
         ? { remoteHost, remotePort: parseInt(remotePort ?? "27017", 10) }
         : undefined,
@@ -88,6 +94,7 @@ export function parseConfig(env: NodeJS.ProcessEnv): ParsedConfig {
 // --- Runtime module-level exports (use process.env at load time) ---
 
 const _parsed = parseConfig(process.env);
+let _currentEnv = _parsed.defaultEnv;
 
 export function getEnvConfig(envName: string): EnvConfig {
   const cfg = _parsed.environments.get(envName);
@@ -101,11 +108,31 @@ export function getEnvConfig(envName: string): EnvConfig {
 }
 
 export function getDefaultEnv(): string {
-  return _parsed.defaultEnv;
+  return _currentEnv;
+}
+
+export function setCurrentEnv(envName: string): void {
+  const lower = envName.toLowerCase();
+  if (!_parsed.environments.has(lower)) {
+    const available = [..._parsed.environments.keys()].join(", ");
+    throw new Error(
+      `Unknown environment "${lower}". Available: ${available || "(none)"}`
+    );
+  }
+  _currentEnv = lower;
 }
 
 export function listEnvs(): string[] {
   return [..._parsed.environments.keys()];
+}
+
+export function getEnvDetails(): Array<{ name: string; database: string; mode: EnvMode; hasSsh: boolean }> {
+  return [..._parsed.environments.values()].map((cfg) => ({
+    name: cfg.name,
+    database: cfg.database,
+    mode: cfg.mode,
+    hasSsh: !!cfg.ssh,
+  }));
 }
 
 export const sshConfig: SshGlobalConfig | null = _parsed.sshConfig;

@@ -11,12 +11,30 @@ import { aggregateSchema, aggregate } from "./tools/aggregate.js";
 import { insertSchema, insert } from "./tools/insert.js";
 import { updateSchema, update } from "./tools/update.js";
 import { deleteSchema, del } from "./tools/delete.js";
+import { listEnvironmentsSchema, listEnvironments } from "./tools/list-environments.js";
+import { switchEnvSchema, switchEnv } from "./tools/switch-env.js";
 
 runMcpServer({
   name: "speedwagon-mongodb",
   version: "0.2.0",
   onShutdown: closeAll,
   tools: [
+    defineTool({
+      name: "list_environments",
+      description:
+        "List all configured MongoDB environments and show which one is currently active. Use this first to see available databases.",
+      inputSchema: listEnvironmentsSchema,
+      annotations: { readOnlyHint: true },
+      handler: listEnvironments,
+    }),
+    defineTool({
+      name: "switch_env",
+      description:
+        "Switch the active MongoDB environment. After switching, all subsequent tool calls will target the new environment by default.",
+      inputSchema: switchEnvSchema,
+      annotations: { readOnlyHint: true },
+      handler: switchEnv,
+    }),
     defineTool({
       name: "explain",
       description:

@@ -35,6 +35,59 @@ describe("config - multi-env parsing", () => {
     expect(result.environments.get("beta")?.mode).toBe("readwrite");
   });
 
+  it("should parse env names with underscores", () => {
+    const result = parseConfig({
+      MONGODB_OP_ORDERS_URI: "mongodb://localhost:27017/op",
+      MONGODB_OP_ORDERS_DATABASE: "orders",
+      MONGODB_DEV_ORDERS_URI: "mongodb://localhost:27017/dev",
+      MONGODB_DEV_ORDERS_DATABASE: "orders_dev",
+    });
+
+    expect([...result.environments.keys()]).toContain("op_orders");
+    expect([...result.environments.keys()]).toContain("dev_orders");
+    expect(result.environments.get("op_orders")?.database).toBe("orders");
+    expect(result.environments.get("dev_orders")?.database).toBe("orders_dev");
+  });
+
+  it("should only allow readwrite for known safe prefixes (dev, beta, staging, local, test)", () => {
+    const result = parseConfig({
+      MONGODB_DEV_BILLING_URI: "mongodb://localhost:27017/dev",
+      MONGODB_DEV_BILLING_DATABASE: "billing_dev",
+      MONGODB_BETA_BILLING_URI: "mongodb://localhost:27017/beta",
+      MONGODB_BETA_BILLING_DATABASE: "billing_beta",
+      MONGODB_STAGING_USERS_URI: "mongodb://localhost:27017/staging",
+      MONGODB_STAGING_USERS_DATABASE: "users_staging",
+      MONGODB_LOCAL_ORDERS_URI: "mongodb://localhost:27017/local",
+      MONGODB_LOCAL_ORDERS_DATABASE: "orders_local",
+      MONGODB_TEST_ANALYTICS_URI: "mongodb://localhost:27017/test",
+      MONGODB_TEST_ANALYTICS_DATABASE: "analytics_test",
+    });
+
+    expect(result.environments.get("dev_billing")?.mode).toBe("readwrite");
+    expect(result.environments.get("beta_billing")?.mode).toBe("readwrite");
+    expect(result.environments.get("staging_users")?.mode).toBe("readwrite");
+    expect(result.environments.get("local_orders")?.mode).toBe("readwrite");
+    expect(result.environments.get("test_analytics")?.mode).toBe("readwrite");
+  });
+
+  it("should default to readonly for unrecognized prefixes", () => {
+    const result = parseConfig({
+      MONGODB_OP_BILLING_URI: "mongodb://localhost:27017/op",
+      MONGODB_OP_BILLING_DATABASE: "billing",
+      MONGODB_PROD_USERS_URI: "mongodb://localhost:27017/prod",
+      MONGODB_PROD_USERS_DATABASE: "users",
+      MONGODB_ANALYTICS_URI: "mongodb://localhost:27017/analytics",
+      MONGODB_ANALYTICS_DATABASE: "analytics",
+      MONGODB_PAYMENTS_URI: "mongodb://localhost:27017/payments",
+      MONGODB_PAYMENTS_DATABASE: "payments",
+    });
+
+    expect(result.environments.get("op_billing")?.mode).toBe("readonly");
+    expect(result.environments.get("prod_users")?.mode).toBe("readonly");
+    expect(result.environments.get("analytics")?.mode).toBe("readonly");
+    expect(result.environments.get("payments")?.mode).toBe("readonly");
+  });
+
   it("should detect SSH config when SSH_REMOTE_HOST is present per-env", () => {
     const result = parseConfig({
       MONGODB_OP_URI: "mongodb://localhost:{tunnel_port}/op",
