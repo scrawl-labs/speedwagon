@@ -10,7 +10,7 @@ export const slowQueriesSchema = z.object({
 export type SlowQueriesInput = z.infer<typeof slowQueriesSchema>;
 
 export async function slowQueries(input: SlowQueriesInput): Promise<string> {
-  const db = await getDb();
+  const { db } = await getDb();
 
   const filter: Record<string, unknown> = {
     millis: { $gte: input.threshold_ms },

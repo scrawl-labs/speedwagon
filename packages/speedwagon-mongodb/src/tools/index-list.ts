@@ -8,7 +8,7 @@ export const indexListSchema = z.object({
 export type IndexListInput = z.infer<typeof indexListSchema>;
 
 export async function indexList(input: IndexListInput): Promise<string> {
-  const db = await getDb();
+  const { db } = await getDb();
   const collection = db.collection(input.collection);
 
   const indexes = await collection.indexes();

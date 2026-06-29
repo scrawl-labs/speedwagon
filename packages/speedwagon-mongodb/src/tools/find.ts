@@ -12,7 +12,7 @@ export const findSchema = z.object({
 export type FindInput = z.infer<typeof findSchema>;
 
 export async function find(input: FindInput): Promise<string> {
-  const db = await getDb();
+  const { db } = await getDb();
   const collection = db.collection(input.collection);
 
   const filter = JSON.parse(input.filter);

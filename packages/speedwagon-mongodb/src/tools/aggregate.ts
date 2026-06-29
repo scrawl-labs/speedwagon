@@ -12,7 +12,7 @@ export const aggregateSchema = z.object({
 export type AggregateInput = z.infer<typeof aggregateSchema>;
 
 export async function aggregate(input: AggregateInput): Promise<string> {
-  const db = await getDb();
+  const { db } = await getDb();
   const collection = db.collection(input.collection);
 
   const pipeline = JSON.parse(input.pipeline) as Record<string, unknown>[];

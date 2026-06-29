@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { runMcpServer, defineTool } from "@scrawl-labs/speedwagon";
-import { closeDb } from "./client.js";
+import { closeAll } from "./client.js";
 import { explainSchema, explain } from "./tools/explain.js";
 import { explainAnalyzeSchema, explainAnalyze } from "./tools/explain-analyze.js";
 import { indexListSchema, indexList } from "./tools/index-list.js";
@@ -12,7 +12,7 @@ import { aggregateSchema, aggregate } from "./tools/aggregate.js";
 runMcpServer({
   name: "speedwagon-mongodb",
   version: "0.1.0",
-  onShutdown: closeDb,
+  onShutdown: closeAll,
   tools: [
     defineTool({
       name: "explain",

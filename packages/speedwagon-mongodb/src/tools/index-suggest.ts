@@ -10,7 +10,7 @@ export const indexSuggestSchema = z.object({
 export type IndexSuggestInput = z.infer<typeof indexSuggestSchema>;
 
 export async function indexSuggest(input: IndexSuggestInput): Promise<string> {
-  const db = await getDb();
+  const { db } = await getDb();
   const collection = db.collection(input.collection);
 
   const filter = JSON.parse(input.filter);

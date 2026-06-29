@@ -11,7 +11,7 @@ export const explainSchema = z.object({
 export type ExplainInput = z.infer<typeof explainSchema>;
 
 export async function explain(input: ExplainInput): Promise<string> {
-  const db = await getDb();
+  const { db } = await getDb();
   const collection = db.collection(input.collection);
 
   const filter = JSON.parse(input.filter);
