@@ -1,7 +1,7 @@
 {
   "name": "@scrawl-labs/speedwagon-mongodb",
-  "version": "0.1.0",
-  "description": "MongoDB query analyzer MCP server (audit). Read-only by construction — production-safe.",
+  "version": "0.2.0",
+  "description": "MongoDB MCP server with multi-environment support, SSH tunneling, and read/write guardrails.",
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
