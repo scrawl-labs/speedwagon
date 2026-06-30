@@ -1,13 +1,16 @@
 import { z } from "zod";
 import { esPost } from "../client.js";
+import { config } from "../config.js";
 
 export const searchLogsSchema = z.object({
-  index: z.string().describe("Index pattern (e.g. 'logs-*', 'filebeat-*', 'error-logs-*')"),
+  index: z.string().describe("Index pattern (e.g. 'logs-*', 'filebeat-*', 'kubernetes-logs-*')"),
   query: z.string().optional().describe("Free-text search query (Lucene syntax, e.g. 'error AND timeout')"),
-  level: z.string().optional().describe("Log level filter (e.g. 'error', 'warn', 'info')"),
-  user: z.string().optional().describe("Filter by user/userId field"),
+  level: z.string().optional().describe("Log level filter (e.g. 'error', 'warn', 'info', 'access')"),
+  user: z.string().optional().describe("Filter by user identifier"),
   uri: z.string().optional().describe("Filter by request URI or path"),
-  service: z.string().optional().describe("Filter by service name"),
+  service: z.string().optional().describe("Filter by service/app name"),
+  status_code: z.number().optional().describe("Filter by HTTP status code (e.g. 500)"),
+  method: z.string().optional().describe("Filter by HTTP method (e.g. GET, POST)"),
   from: z.string().optional().default("now-1h").describe("Start time (default: now-1h)"),
   to: z.string().optional().default("now").describe("End time (default: now)"),
   size: z.number().optional().default(50).describe("Number of log entries to return (default: 50, max: 200)"),
@@ -16,10 +19,12 @@ export const searchLogsSchema = z.object({
 export type SearchLogsInput = z.infer<typeof searchLogsSchema>;
 
 export async function searchLogs(input: SearchLogsInput): Promise<string> {
+  const f = config.fieldMap;
+
   const must: unknown[] = [
     {
       range: {
-        "@timestamp": {
+        [f.timestamp]: {
           gte: input.from,
           lte: input.to,
         },
@@ -32,57 +37,27 @@ export async function searchLogs(input: SearchLogsInput): Promise<string> {
   }
 
   if (input.level) {
-    must.push({
-      bool: {
-        should: [
-          { term: { "log.level": input.level.toLowerCase() } },
-          { term: { level: input.level.toLowerCase() } },
-          { term: { severity: input.level.toUpperCase() } },
-        ],
-        minimum_should_match: 1,
-      },
-    });
+    must.push({ term: { [f.level]: input.level.toLowerCase() } });
   }
 
   if (input.user) {
-    must.push({
-      bool: {
-        should: [
-          { match: { "user.id": input.user } },
-          { match: { userId: input.user } },
-          { match: { "user.name": input.user } },
-          { match: { username: input.user } },
-        ],
-        minimum_should_match: 1,
-      },
-    });
+    must.push({ match: { [f.user]: input.user } });
   }
 
   if (input.uri) {
-    must.push({
-      bool: {
-        should: [
-          { wildcard: { "url.path": `*${input.uri}*` } },
-          { wildcard: { "http.request.uri": `*${input.uri}*` } },
-          { wildcard: { uri: `*${input.uri}*` } },
-          { wildcard: { path: `*${input.uri}*` } },
-        ],
-        minimum_should_match: 1,
-      },
-    });
+    must.push({ wildcard: { [f.uri]: `*${input.uri}*` } });
   }
 
   if (input.service) {
-    must.push({
-      bool: {
-        should: [
-          { term: { "service.name": input.service } },
-          { term: { "kubernetes.container.name": input.service } },
-          { term: { "app.name": input.service } },
-        ],
-        minimum_should_match: 1,
-      },
-    });
+    must.push({ term: { [f.service]: input.service } });
+  }
+
+  if (input.status_code) {
+    must.push({ term: { [f.status_code]: input.status_code } });
+  }
+
+  if (input.method) {
+    must.push({ term: { [f.method]: input.method.toUpperCase() } });
   }
 
   const size = Math.min(input.size ?? 50, 200);
@@ -94,7 +69,7 @@ export async function searchLogs(input: SearchLogsInput): Promise<string> {
     };
   }>(`/${input.index}/_search`, {
     query: { bool: { must } },
-    sort: [{ "@timestamp": "desc" }],
+    sort: [{ [f.timestamp]: "desc" }],
     size,
     _source: true,
   });
@@ -107,6 +82,7 @@ export async function searchLogs(input: SearchLogsInput): Promise<string> {
   return JSON.stringify({
     total: result.hits.total.value,
     returned: hits.length,
+    fieldMap: f,
     logs: hits,
   }, null, 2);
 }
