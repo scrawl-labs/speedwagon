@@ -1,10 +1,6 @@
 # @scrawl-labs/speedwagon-grafana
 
-Grafana MCP server in the Speedwagon family. It's a **read-only gateway** in front of the official [`mcp-grafana`](https://github.com/grafana/mcp-grafana): Speedwagon spawns the official server with `--disable-write`, then re-exposes a curated subset of observability **read** tools (dashboards, datasources, Prometheus, Loki).
-
-## Prerequisites
-
-The official `mcp-grafana` binary must be runnable. Easiest is [`uv`](https://docs.astral.sh/uv/) (then `uvx mcp-grafana` works), or install the binary / Docker image per its README.
+Grafana MCP server — dashboard search, metric queries, anomaly detection, and incident timeline via Grafana HTTP API. Read-only.
 
 ## Install
 
@@ -12,19 +8,24 @@ The official `mcp-grafana` binary must be runnable. Easiest is [`uv`](https://do
 npm install -g @scrawl-labs/speedwagon-grafana
 ```
 
-Wire it into your MCP client. For Claude Code, the easiest path is the CLI:
+## Configuration
 
-```bash
-claude mcp add speedwagon-grafana \
-  --scope local \
-  --env GRAFANA_URL="https://your-stack.grafana.net" \
-  --env GRAFANA_SERVICE_ACCOUNT_TOKEN="glsa_xxx" \
-  -- speedwagon-grafana
-```
+### Environment Variables
 
-This writes the registration to `~/.claude.json` (project-scoped under `projects[<cwd>].mcpServers`). Verify with `claude mcp list`.
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GRAFANA_URL` | Yes | Grafana instance URL (e.g. `https://grafana.example.com`) |
+| `GRAFANA_SERVICE_ACCOUNT_TOKEN` | Yes | Service Account token (Viewer role is sufficient) |
 
-If you prefer to edit JSON directly, the file is **`~/.claude.json`** (not `~/.claude/settings.json` — that's for harness settings like hooks/permissions and is not read for MCP servers). To share the registration with your team via git, use a project-local **`.mcp.json`** at the repo root instead. Either way, the `env` block is required — Speedwagon does not load `.env` files:
+### Token Setup
+
+1. Grafana → Administration → Service Accounts
+2. Create a service account with **Viewer** role
+3. Generate a token
+
+### MCP Client Configuration
+
+Add to `~/.mcp.json` or project-level `.mcp.json`:
 
 ```json
 {
@@ -32,28 +33,45 @@ If you prefer to edit JSON directly, the file is **`~/.claude.json`** (not `~/.c
     "speedwagon-grafana": {
       "command": "speedwagon-grafana",
       "env": {
-        "GRAFANA_URL": "https://your-stack.grafana.net",
-        "GRAFANA_SERVICE_ACCOUNT_TOKEN": "glsa_xxx"
+        "GRAFANA_URL": "https://grafana.example.com",
+        "GRAFANA_SERVICE_ACCOUNT_TOKEN": "glsa_xxxxxxxxxxxx"
       }
     }
   }
 }
 ```
 
-## Environment variables
+## Tools
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GRAFANA_URL` | Yes | Grafana instance URL |
-| `GRAFANA_SERVICE_ACCOUNT_TOKEN` | Yes | Service account token (Viewer role is enough) |
-| `GRAFANA_MCP_COMMAND` | No | Override the upstream launcher (default `uvx`) |
-| `GRAFANA_MCP_ARGS` | No | Override upstream args (default `mcp-grafana -t stdio --disable-write`) |
+### Dashboard Discovery
 
-## Exposed tools
+| Tool | Description |
+|------|-------------|
+| `search_dashboards` | Search dashboards by title, folder, or tag |
+| `get_dashboard` | Get dashboard details with all panels (id, title, type, datasource) |
 
-`search_dashboards`, `get_dashboard_by_uid`, `get_dashboard_summary`, `get_dashboard_property`, `get_dashboard_panel_queries`, `list_datasources`, `get_datasource`, `query_prometheus`, `query_prometheus_histogram`, `list_prometheus_metric_metadata`, `list_prometheus_metric_names`, `list_prometheus_label_names`, `list_prometheus_label_values`, `query_loki_logs`, `query_loki_stats`, `list_loki_label_names`, `list_loki_label_values`.
+### Metric Queries
 
-Everything else `mcp-grafana` offers (alerting writes, incidents, OnCall, admin) is filtered out, and `--disable-write` blocks writes at the source as a second layer.
+| Tool | Description |
+|------|-------------|
+| `query_panel` | Execute a panel's configured queries and return time series data |
+
+### Analysis
+
+| Tool | Description |
+|------|-------------|
+| `detect_anomaly` | Z-score based spike/drop detection on panel metrics. Configurable sensitivity. |
+| `incident_timeline` | Chronological timeline of alert state changes, active alerts, and annotations |
+
+## Usage Examples
+
+```
+"Show me all dashboards"           → search_dashboards
+"What panels are in this dashboard" → get_dashboard (with UID)
+"Show me CPU metrics"              → query_panel (with UID + panel ID)
+"Any anomalies in the last 6h?"    → detect_anomaly (with UID + panel ID)
+"What alerts fired today?"         → incident_timeline (from: now-24h)
+```
 
 ## License
 
