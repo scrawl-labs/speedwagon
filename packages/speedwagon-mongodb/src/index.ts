@@ -13,6 +13,9 @@ import { updateSchema, update } from "./tools/update.js";
 import { deleteSchema, del } from "./tools/delete.js";
 import { listEnvironmentsSchema, listEnvironments } from "./tools/list-environments.js";
 import { switchEnvSchema, switchEnv } from "./tools/switch-env.js";
+import { currentOpsSchema, currentOps } from "./tools/current-ops.js";
+import { serverStatusSchema, serverStatus } from "./tools/server-status.js";
+import { collectionStatsSchema, collectionStats } from "./tools/collection-stats.js";
 
 runMcpServer({
   name: "speedwagon-mongodb",
@@ -89,6 +92,30 @@ runMcpServer({
       inputSchema: aggregateSchema,
       annotations: { readOnlyHint: true },
       handler: aggregate,
+    }),
+    defineTool({
+      name: "current_ops",
+      description:
+        "Show currently running operations on the MongoDB server. Essential for diagnosing live performance issues — shows what queries are executing right now, how long they've been running, and what resources they're using.",
+      inputSchema: currentOpsSchema,
+      annotations: { readOnlyHint: true },
+      handler: currentOps,
+    }),
+    defineTool({
+      name: "server_status",
+      description:
+        "Get MongoDB server status including connection count, opcounters (insert/query/update/delete rates), memory usage, network I/O, and global lock queue.",
+      inputSchema: serverStatusSchema,
+      annotations: { readOnlyHint: true },
+      handler: serverStatus,
+    }),
+    defineTool({
+      name: "collection_stats",
+      description:
+        "Get collection statistics: document count, average document size, data size, storage size, index count and sizes.",
+      inputSchema: collectionStatsSchema,
+      annotations: { readOnlyHint: true },
+      handler: collectionStats,
     }),
     defineTool({
       name: "insert",

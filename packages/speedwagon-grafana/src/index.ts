@@ -3,6 +3,8 @@ import { runMcpServer, defineTool } from "@scrawl-labs/speedwagon";
 import { searchDashboardsSchema, searchDashboards } from "./tools/search.js";
 import { getDashboardSchema, getDashboard } from "./tools/get-dashboard.js";
 import { queryPanelSchema, queryPanel } from "./tools/query-panel.js";
+import { detectAnomalySchema, detectAnomaly } from "./tools/detect-anomaly.js";
+import { incidentTimelineSchema, incidentTimeline } from "./tools/incident-timeline.js";
 
 runMcpServer({
   name: "speedwagon-grafana",
@@ -31,6 +33,22 @@ runMcpServer({
       inputSchema: queryPanelSchema,
       annotations: { readOnlyHint: true },
       handler: queryPanel,
+    }),
+    defineTool({
+      name: "detect_anomaly",
+      description:
+        "Detect anomalies (spikes/drops) in a panel's metric data using z-score statistical analysis. Returns anomalous data points with timestamps, severity, and direction.",
+      inputSchema: detectAnomalySchema,
+      annotations: { readOnlyHint: true },
+      handler: detectAnomaly,
+    }),
+    defineTool({
+      name: "incident_timeline",
+      description:
+        "Build a chronological incident timeline from Grafana alerts and annotations within a time range. Shows alert state changes, active alerts, and manual annotations.",
+      inputSchema: incidentTimelineSchema,
+      annotations: { readOnlyHint: true },
+      handler: incidentTimeline,
     }),
   ],
 }).catch((error) => {
