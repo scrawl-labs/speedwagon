@@ -1,40 +1,38 @@
 #!/usr/bin/env node
-import { proxyMcpServer } from "@scrawl-labs/speedwagon";
-import { config } from "./config.js";
+import { runMcpServer, defineTool } from "@scrawl-labs/speedwagon";
+import { searchDashboardsSchema, searchDashboards } from "./tools/search.js";
+import { getDashboardSchema, getDashboard } from "./tools/get-dashboard.js";
+import { queryPanelSchema, queryPanel } from "./tools/query-panel.js";
 
-const ALLOWED_TOOLS = new Set([
-  "search_dashboards",
-  "get_dashboard_by_uid",
-  "get_dashboard_summary",
-  "get_dashboard_property",
-  "get_dashboard_panel_queries",
-  "list_datasources",
-  "get_datasource",
-  "query_prometheus",
-  "query_prometheus_histogram",
-  "list_prometheus_metric_metadata",
-  "list_prometheus_metric_names",
-  "list_prometheus_label_names",
-  "list_prometheus_label_values",
-  "query_loki_logs",
-  "query_loki_stats",
-  "list_loki_label_names",
-  "list_loki_label_values",
-]);
-
-proxyMcpServer({
+runMcpServer({
   name: "speedwagon-grafana",
-  version: "0.1.0",
-  upstream: {
-    kind: "stdio",
-    command: config.command,
-    args: config.args,
-    env: {
-      GRAFANA_URL: config.grafanaUrl,
-      GRAFANA_SERVICE_ACCOUNT_TOKEN: config.serviceAccountToken,
-    },
-  },
-  allow: (tool) => ALLOWED_TOOLS.has(tool.name),
+  version: "0.2.0",
+  tools: [
+    defineTool({
+      name: "search_dashboards",
+      description:
+        "Search Grafana dashboards by title, folder name, or tag. Returns UID, title, folder, and tags for each match.",
+      inputSchema: searchDashboardsSchema,
+      annotations: { readOnlyHint: true },
+      handler: searchDashboards,
+    }),
+    defineTool({
+      name: "get_dashboard",
+      description:
+        "Get dashboard details including all panels (id, title, type, datasource). Use the panel IDs with query_panel to fetch actual metric data.",
+      inputSchema: getDashboardSchema,
+      annotations: { readOnlyHint: true },
+      handler: getDashboard,
+    }),
+    defineTool({
+      name: "query_panel",
+      description:
+        "Query a specific panel's metric data. Executes the panel's configured queries against its datasource and returns time series results.",
+      inputSchema: queryPanelSchema,
+      annotations: { readOnlyHint: true },
+      handler: queryPanel,
+    }),
+  ],
 }).catch((error) => {
   console.error("Failed to start MCP server:", error);
   process.exit(1);

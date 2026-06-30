@@ -1,7 +1,7 @@
 {
   "name": "@scrawl-labs/speedwagon-grafana",
-  "version": "0.1.0",
-  "description": "Grafana (dashboards + metrics) MCP server in the Speedwagon family. Read-only gateway over the official mcp-grafana.",
+  "version": "0.2.0",
+  "description": "Grafana MCP server — dashboard search, panel details, and metric queries via Grafana HTTP API.",
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
@@ -11,13 +11,16 @@
   "scripts": {
     "build": "tsc -b",
     "start": "node dist/index.js",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@scrawl-labs/speedwagon": "workspace:*"
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@scrawl-labs/speedwagon": "workspace:*",
+    "zod": "^3.25.23"
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1"
+    "vitest": "^2.1.9"
   },
   "keywords": ["mcp", "grafana", "metrics", "dashboards", "prometheus", "speedwagon"],
   "license": "MIT",
