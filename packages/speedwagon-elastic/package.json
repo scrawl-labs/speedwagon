@@ -1,7 +1,7 @@
 {
   "name": "@scrawl-labs/speedwagon-elastic",
-  "version": "0.1.0",
-  "description": "Elastic (APM + logs) MCP server in the Speedwagon family. Read-only gateway over the Kibana Agent Builder MCP.",
+  "version": "0.2.0",
+  "description": "Elasticsearch MCP server — log search, error aggregation, and index discovery via Elasticsearch REST API. Read-only.",
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
@@ -11,12 +11,18 @@
   "scripts": {
     "build": "tsc -b",
     "start": "node dist/index.js",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@scrawl-labs/speedwagon": "workspace:*"
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@scrawl-labs/speedwagon": "workspace:*",
+    "zod": "^3.25.23"
   },
-  "keywords": ["mcp", "elastic", "elasticsearch", "apm", "logs", "speedwagon"],
+  "devDependencies": {
+    "vitest": "^2.1.9"
+  },
+  "keywords": ["mcp", "elastic", "elasticsearch", "logs", "errors", "speedwagon"],
   "license": "MIT",
   "publishConfig": {
     "access": "public"
